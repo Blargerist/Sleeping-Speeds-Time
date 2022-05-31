@@ -87,28 +87,38 @@ namespace SleepingSpeedsTime {
 
 
                         //Progress Servant creation timers
+                        //Query all Entity with an associated ServantCoffinstation. This is the component that contains servant coffin data
                         var servantCoffinQuery = __instance.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<ServantCoffinstation>());
                         var coffinEntities = servantCoffinQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
 
                         foreach (var coffinEntity in coffinEntities) {
                             var coffinStation = __instance.EntityManager.GetComponentData<ServantCoffinstation>(coffinEntity);
 
+                            //Check if the coffin is currently converting an npc
                             if (coffinStation.State == ServantCoffinState.Converting) {
+                                //Increase the conversion progress. As it's a struct, this makes a copy and does not modify the original
                                 coffinStation.ConvertionProgress += 1;
+                                //Set the modified component back on the enity so the value change is used
                                 __instance.EntityManager.SetComponentData<ServantCoffinstation>(coffinEntity, coffinStation);
                             }
                         }
 
                         //Progress Servant mission timers
+                        //Query all Entity with an associated ActiveServantMission. This component contains data for active servant missions
                         var servantMissonQuery = __instance.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<ActiveServantMission>());
                         var missionEntities = servantMissonQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
 
                         foreach (var missionEntity in missionEntities) {
+                            //ActiveServantMission is an IBufferElementData so it has to be gotten as a buffer rather than component
                             var missionBuffer = __instance.EntityManager.GetBuffer<ActiveServantMission>(missionEntity);
 
+                            //A buffer can contain multiple things and must therefore be looped through
                             for (int i = 0; i < missionBuffer.Length; i++) {
+                                //Get mission at current index
                                 var mission = missionBuffer[i];
+                                //Reduce mission length, causing it to finish sooner
                                 mission.MissionLength -= 0.5F;
+                                //Set the mission at the current index to the now modified mission
                                 missionBuffer[i] = mission;
                             }
                         }
