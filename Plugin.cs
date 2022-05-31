@@ -13,7 +13,7 @@ namespace SleepingSpeedsTime {
 
         const String pluginGUID = "me.blargerist.SleepingSpeedsTime";
         const String pluginName = "SleepingSpeedsTime";
-        const String pluginVersion = "1.0.0";
+        const String pluginVersion = "1.1.0";
         public static ManualLogSource logger;
 
         public override void Load() {
@@ -84,6 +84,34 @@ namespace SleepingSpeedsTime {
                         var setTimeEntity = __instance.EntityManager.CreateEntity(ComponentType.ReadOnly<SetTimeOfDayEvent>());
                         __instance.EntityManager.SetComponentData<SetTimeOfDayEvent>(setTimeEntity, new SetTimeOfDayEvent() { Day = 0, Hour = 0, Minute = 1, Month = 0, Year = 0, Type = SetTimeOfDayEvent.SetTimeType.Add });
                         //Created Entity will be picked up by another System automatically and used to update the time
+
+
+                        //Progress Servant creation timers
+                        var servantCoffinQuery = __instance.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<ServantCoffinstation>());
+                        var coffinEntities = servantCoffinQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
+
+                        foreach (var coffinEntity in coffinEntities) {
+                            var coffinStation = __instance.EntityManager.GetComponentData<ServantCoffinstation>(coffinEntity);
+
+                            if (coffinStation.State == ServantCoffinState.Converting) {
+                                coffinStation.ConvertionProgress += 1;
+                                __instance.EntityManager.SetComponentData<ServantCoffinstation>(coffinEntity, coffinStation);
+                            }
+                        }
+
+                        //Progress Servant mission timers
+                        var servantMissonQuery = __instance.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<ActiveServantMission>());
+                        var missionEntities = servantMissonQuery.ToEntityArray(Unity.Collections.Allocator.Temp);
+
+                        foreach (var missionEntity in missionEntities) {
+                            var missionBuffer = __instance.EntityManager.GetBuffer<ActiveServantMission>(missionEntity);
+
+                            for (int i = 0; i < missionBuffer.Length; i++) {
+                                var mission = missionBuffer[i];
+                                mission.MissionLength -= 0.5F;
+                                missionBuffer[i] = mission;
+                            }
+                        }
                     }
                 }
                 catch (Exception e) {
